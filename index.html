@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚡RazorEnc</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(90deg,#60a5fa,#a78bfa,#f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 5px;
+    }
+    textarea, input {
+      width: 100%;
+      max-width: 650px;
+      background: #1e293b;
+      border: none;
+      border-radius: 8px;
+      color: #f8fafc;
+      padding: 12px;
+      margin: 10px 0;
+      resize: vertical;
+      outline: none;
+      font-family: monospace;
+    }
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+      max-width: 650px;
+      width: 100%;
+    }
+    button {
+      flex: 1;
+      min-width: 120px;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(90deg,#3b82f6,#9333ea);
+      color: white;
+      font-size: 0.9rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .download {
+      max-width: 650px;
+      width: 100%;
+      margin-top: 10px;
+      background: #1e293b;
+    }
+  </style>
+</head>
+<body>
+  <h1>⚡Razorenc⚡</h1>
+
+  <textarea id="inputCode" placeholder="// Masukkan kode JS di sini"></textarea>
+  <input type="file" id="fileInput">
+
+  <input type="text" id="customName" placeholder="Nama custom (untuk mode Nama)">
+
+  <div class="btn-group">
+    <button onclick="obfuscate('standard')">Standard</button>
+    <button onclick="obfuscate('hard')">Hard</button>
+    <button onclick="obfuscate('bulan')">Enc Bulan</button>
+    <button onclick="obfuscate('nama')">Enc Nama</button>
+    <button onclick="obfuscate('eval')">Enc Eval</button>
+  </div>
+
+  <h3>Hasil Obfuscation</h3>
+  <textarea id="outputCode" placeholder="// Hasil obfuscation akan muncul di sini"></textarea>
+  <button class="download" onclick="downloadFile()">💾 Download Hasil</button>
+
+  <script>
+    const bulanList = [
+      "Januari","Februari","Maret","April","Mei","Juni",
+      "Juli","Agustus","September","Oktober","November","Desember"
+    ];
+
+    document.getElementById("fileInput").addEventListener("change", function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = evt => {
+          document.getElementById("inputCode").value = evt.target.result;
+        };
+        reader.readAsText(file);
+      }
+    });
+
+    function randomBulan() {
+      return bulanList[Math.floor(Math.random() * bulanList.length)] + "_" + Math.floor(Math.random()*9999);
+    }
+
+    function obfuscate(mode) {
+      let code = document.getElementById("inputCode").value;
+      let customName = document.getElementById("customName").value.trim();
+
+      if (!code.trim()) {
+        alert("Masukkan kode dulu!");
+        return;
+      }
+
+      let base64 = btoa(unescape(encodeURIComponent(code)));
+      let result;
+
+      if (mode === "standard") {
+        result = `(function(){eval(decodeURIComponent(escape(atob("${base64}"))));})();`;
+      } 
+      else if (mode === "hard") {
+        result = `(function(){eval(eval("atob('${btoa(base64)}')"));})();`;
+      } 
+      else if (mode === "bulan") {
+        let var1 = randomBulan();
+        let var2 = randomBulan();
+        result = `(function(){var ${var1}="${base64}";var ${var2}=function(s){return decodeURIComponent(escape(atob(s)))};eval(${var2}(${var1}));})();`;
+      } 
+      else if (mode === "nama") {
+        let nama = (customName || "Anon") + "_" + Math.floor(Math.random()*9999);
+        let nama2 = (customName || "User") + "_" + Math.floor(Math.random()*9999);
+        result = `(function(){var ${nama}="${base64}";var ${nama2}=function(s){return decodeURIComponent(escape(atob(s)))};eval(${nama2}(${nama}));})();`;
+      }
+      else if (mode === "eval") {
+        result = `(function(){eval(eval(eval("'"+atob("${base64}").split("").map(c=> "\\x"+c.charCodeAt(0).toString(16)).join("")+"'")));})();`;
+      }
+
+      document.getElementById("outputCode").value = result;
+    }
+
+    function downloadFile() {
+      const text = document.getElementById("outputCode").value;
+      const blob = new Blob([text], { type: "text/javascript" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "obfuscate.js";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
